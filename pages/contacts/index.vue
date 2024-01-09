@@ -13,7 +13,7 @@ const userStore = useUserStore()
 
 definePageMeta({
     layout: "default",
-    middleware: []
+    middleware: ['auth', 'access']
 })
    
 </script>

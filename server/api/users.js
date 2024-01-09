@@ -133,7 +133,7 @@ export default defineEventHandler(async (event) => {
 
                 console.log(baseURL, params.email, emailToken)
                 var content = `<table style="border-collapse: collapse; width: 100%;"><tr>
-                <td style="width: 1%; padding: 0; vertical-align: top;"><img src="https://cafecard.ru/dist/img/logo_d24_login.png"></td>
+                <td style="width: 1%; padding: 0; vertical-align: top;"><img src="https://cafecard.ru/dist/img/logo_morion_login.png"></td>
                 <td style="padding: 20px 0 0 0; text-align: left; vertical-align: top;"><b>Ссылка для сброса пароля:</b> 
                 <a target=_blank href="${baseURL}/login/reset?email=${params.email}&token=${emailToken}">Подтвердить</a><br>
                 Если вы не отправляли этот запрос, то просто закройте и удалите это письмо.</td></tr></table>`;

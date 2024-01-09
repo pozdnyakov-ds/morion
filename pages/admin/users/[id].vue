@@ -122,7 +122,7 @@
 <script setup>
 definePageMeta({
     layout: "default",
-    middleware: ['auth', 'access']
+    middleware: ['auth']
 })
 
 const route = useRoute()

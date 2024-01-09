@@ -5,6 +5,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     const list = await indexStore.getRights()
     const scope = userStore.scope
 
+    const paths = ['/products', '/services', '/contacts']
+
     var isAccess = false
     for (var key in list) {
         const item = list[key]
@@ -15,6 +17,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
     if (!isAccess) {
         const router = useRouter()
-        //router.push("/no_access")
+        router.push("/login")
     }
 })

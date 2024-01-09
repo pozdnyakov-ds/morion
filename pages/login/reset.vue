@@ -1,7 +1,7 @@
 <template>
 <div>
-	<div style="text-align: center;">
-		<nuxt-link to="/"><img src="/img/logo_d24_login.png" width="192" /></nuxt-link>
+	<div style="text-align: center; margin-bottom: 20px;">
+		<nuxt-link to="/"><img src="/img/logo_morion_login.png" width="192" /></nuxt-link>
 	</div>
     <div class="login">
 		<v-form v-model="valid">
@@ -72,8 +72,8 @@ const message = ref('')
 const showPassword = ref(false)
 
 const userInfo = reactive({
-	email: '2903015@mail.ru',
-	password: '123456',
+	email: '',
+	password: '',
 	password_repeat: '',
 	token: ''
 })

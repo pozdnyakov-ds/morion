@@ -1,17 +1,17 @@
 module.exports = {
     apps : [
       {
-        name: "d24-dev",
+        name: "morion-dev",
         script: "yarn",
         args: "dev"
       },
       {
-        name: "d24-build",
+        name: "morion-build",
         script: "yarn",
         args: "build"
       },
       {
-        name: "d24-prod",
+        name: "morion-prod",
         script: "node",
         args: "./.output/server/index.mjs"
       }

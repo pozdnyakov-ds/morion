@@ -4,36 +4,6 @@ import randomId from "../../config/misc"
 import path from 'path'
 import translit from '../../config/translit'
 
-import { PutObjectCommand, ListObjectsV2Command, DeleteObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
-import { s3 } from "../../config/s3client"
-import { Buffer } from 'node:buffer'
-
-const deleteAwsFolderFiles = async (key) => {
-    const config = useRuntimeConfig()
-
-    const listCommand = new ListObjectsV2Command({
-        Bucket: config.S3_BUCKET,
-        Prefix: key
-    })
-    let list = await s3.send(listCommand)
-
-    if (list.KeyCount) {
-         const deleteCommand = new DeleteObjectsCommand({
-          Bucket: config.S3_BUCKET,
-          Delete: {
-            Objects: list.Contents.map((item) => ({ Key: item.Key })), 
-            Quiet: false, 
-          },
-        });
-        let deleted = await s3.send(deleteCommand); 
-
-        if (deleted.Errors) {
-          deleted.Errors.map((error) => console.log(`${error.Key} could not be deleted - ${error.Code}`));
-        }
-        return deleted.Deleted.length
-    }
-}
-
 export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig()
 
@@ -172,18 +142,6 @@ export default defineEventHandler(async (event) => {
                 const ext = path.extname(fileName)
                 const pathName = path.basename(fileName, ext) + '-[' + fileId + ']' + ext
 
-                // S3 Upload
-                const config1  = {
-                    Bucket: config.S3_BUCKET,
-                    Key: `partners/${id2}/${pathName}`, 
-                    Body: content,
-                    ContentType: type,
-                    ACL: 'public-read'
-                } 
-                
-                const command = new PutObjectCommand(config1)
-                const res = await s3.send(command)
-
                 // Save to DB
                 const logoData = JSON.stringify({
                     filename: pathName,
@@ -201,25 +159,7 @@ export default defineEventHandler(async (event) => {
                     setResponse(400, 'Create error', null)
                     return response
                 }
-
-                // Create s3 folder
-                try {
-                    const partner = id2
-                    const content = 'Partner folder'
-                    const config1  = {
-                        Bucket: config.S3_BUCKET,
-                        Key: `partners/${partner}/readme.txt`, 
-                        Body: content,
-                    }
-    
-                    const command = new PutObjectCommand(config1)
-                    const res = await s3.send(command)
-                    setResponse(200, 'Create partner OK', res)
-    
-                } catch (e) {
-                    setResponse(204, 'Create partner error', e)
-                }
-
+                
             } catch (error) {
                 setResponse(400, 'Create error', null)
             }
@@ -266,25 +206,6 @@ export default defineEventHandler(async (event) => {
                 }
                 
                 if (contentSave) {
-                    // S3 Delete Old file
-                    var configSave  = {
-                        Bucket: config.S3_BUCKET,
-                        Key: `partners/${partnerSave}/${updateMediaSave}`
-                    }
-                    var commandSave = new DeleteObjectCommand(configSave)
-                    var resSave = await s3.send(commandSave)
-
-                    // S3 Upload
-                    configSave  = {
-                        Bucket: config.S3_BUCKET,
-                        Key: `partners/${partnerSave}/${pathNameSave}`, 
-                        Body: contentSave,
-                        ContentType: logo.type,
-                        ACL: 'public-read'
-                    } 
-                    commandSave = new PutObjectCommand(configSave)
-                    resSave = await s3.send(commandSave)
-
                     //Save to DB
                     const data4 = await new Promise((resolve, reject) => {
                         db.query("UPDATE partners SET name=?, description=?, contacts=?, scope=?, parent=?, logo=?, tags=? WHERE id=?", 
@@ -384,17 +305,6 @@ export default defineEventHandler(async (event) => {
                     
                 } catch (error) {
                     setResponse(400, 'Delete error', null)
-                }
-
-                // Partner s3 delete folder
-                try {
-                    const partner = idPatnerDelete
-                    deleteAwsFolderFiles('partners/'+ partner)
-
-                    setResponse(200, 'Delete partner OK', res)
-
-                } catch (e) {
-                    setResponse(204, 'Delete partner error', e)
                 }
 
             } catch (error) {

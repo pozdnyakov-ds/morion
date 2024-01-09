@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
             // Get index list
             try {
                 const data = await new Promise((resolve, reject) => {
-                    db.query("SELECT id, title, description, parent, path, rights, list_order, status FROM menu WHERE status=?", 
+                    db.query("SELECT id, title, description, parent, path, rights, list_order, visible, status FROM menu WHERE status=?", 
                     [params.status], (err, data) => {
                         if (err) {reject(err)} else {resolve(data)}
                     })

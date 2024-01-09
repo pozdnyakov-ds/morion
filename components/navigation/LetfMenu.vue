@@ -15,7 +15,7 @@
             <div class="user-info-item"><b>Email:</b> {{ userStore.email }}</div>
             <!-- <div><b>Partner ID:</b> {{ userStore.partner }}</div> -->
             <div class="user-info-item"><b>Роль:</b> {{ getScope() }}</div>
-            <div class="user-info-item"><b>Партнер:</b> {{ userStore.partnerName }}</div>
+            <!-- <div class="user-info-item"><b>Партнер:</b> {{ userStore.partnerName }}</div> -->
             <!-- <div><b>PartnerScope:</b> {{ userStore.partnerScope }}</div> -->
             
         </div>
@@ -113,13 +113,15 @@ const makeTree = async () => {
     const lister = (obj, parent, level) => {
         if (obj && obj.length) {
         obj.forEach((item) => {
-            if (item.child && item.child.length) {
-                tree.push({ 'id': item.id, 'title': item.title, 'description': item.description, 'parent': parent, 'level': level, 
-                    'path': item.path, 'list_order': item.list_order, 'rights': item.rights, 'status': item.status })
-                lister(item.child, item.id, level + 1)
-            } else {
-                tree.push({ 'id': item.id, 'title': item.title, 'description': item.description, 'parent': parent, 'level': level, 
-                    'path': item.path, 'list_order': item.list_order, 'rights': item.rights, 'status': item.status })
+            if (item.visible == 1) {
+                if (item.child && item.child.length) {
+                    tree.push({ 'id': item.id, 'title': item.title, 'description': item.description, 'parent': parent, 'level': level, 
+                        'path': item.path, 'list_order': item.list_order, 'rights': item.rights, 'status': item.status })
+                    lister(item.child, item.id, level + 1)
+                } else {
+                    tree.push({ 'id': item.id, 'title': item.title, 'description': item.description, 'parent': parent, 'level': level, 
+                        'path': item.path, 'list_order': item.list_order, 'rights': item.rights, 'status': item.status })
+                }
             }
         })
         } 

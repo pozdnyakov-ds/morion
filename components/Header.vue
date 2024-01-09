@@ -7,8 +7,8 @@
             <!-- <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon> -->
             <v-toolbar-title style="min-width: 250px; margin: 0px;">
                 <div style="background-color: ##eee;">
-                    <nuxt-link to="/"><v-img src="/img/logo_d24.png" style="display: inline-block; vertical-align: middle; margin: 0 0 0 10px;" width="48"></v-img></nuxt-link>
-                    <nuxt-link style="margin: 0 0 0 10px; display: inline-block; vertical-align: middle; font-weight: bold; font-size: 1.0rem;" to="/">DISPLAY.24</nuxt-link>
+                    <nuxt-link to="/"><v-img src="/img/logo_morion.png" style="display: inline-block; vertical-align: middle; margin: 0 0 0 40px;" width="48"></v-img></nuxt-link>
+                    <nuxt-link style="margin: 0 0 0 10px; display: inline-block; vertical-align: middle; font-weight: bold; font-size: 1.0rem;" to="/">MORION.TECH</nuxt-link>
                 </div>
             </v-toolbar-title>
 
@@ -27,19 +27,11 @@
                 <v-tab>
                     <nuxt-link to="/contacts">Контакты</nuxt-link>
                 </v-tab>
-                <v-tab v-if="!userStore.loggedIn">
-                    <nuxt-link to="/login" style="color: green;">Войти</nuxt-link>
-                </v-tab>
             </v-tabs>
 
             <v-spacer></v-spacer>
 
             <client-only>
-                <v-btn icon v-if="userStore.loggedIn">
-                    <nuxt-link to="/cabinet">
-                        <i class="fa-solid fa-shop"></i>
-                    </nuxt-link>
-                </v-btn>
                 <v-btn icon v-if="!userStore.loggedIn">
                     <nuxt-link to="/login">
                         <i class="fa-solid fa-arrow-right-to-bracket"></i>
@@ -84,6 +76,7 @@ const dialog = reactive({
 const dialog_exit_yes = async () => {
     dialog.exit = false
     userStore.logout()
+    router.go("/login")
 }
 
 const setActiveTab = () => {
