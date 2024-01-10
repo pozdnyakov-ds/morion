@@ -38,8 +38,8 @@ export default defineEventHandler(async (event) => {
             var data = null
             var step = 0
 
-            // do { 
-                res = await fetch('https://morion.okdesk.ru/api/v1/companies/list?api_token=' + token + '&page[direction]=forward&page[size]=100&page[from_id]=0', {
+            do { 
+                res = await fetch('https://morion.okdesk.ru/api/v1/companies/list?api_token=' + token + '&page[direction]=forward&page[size]=100&page[from_id]=' + step, {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json"
@@ -50,46 +50,16 @@ export default defineEventHandler(async (event) => {
                     list.push(item)
                 })
 
-                // Задержка 1 сек для Окдеска
-                setTimeout(function() {
-                    console.log("LIST LENGTH: ", data.length)
-                }, 1000);
-
-                res = await fetch('https://morion.okdesk.ru/api/v1/companies/list?api_token=' + token + '&page[direction]=forward&page[size]=100&page[from_id]=100', {
-                        method: "GET",
-                        headers: {
-                            "Content-Type": "application/json"
-                        }
-                    });
-                data = await res.json();
-                data.forEach((item) => {
-                    list.push(item)
-                })
+                step = step + data.length
 
                 // Задержка 1 сек для Окдеска
                 setTimeout(function() {
-                    console.log("LIST LENGTH: ", data.length)
+                    //...
                 }, 1000);
 
-                res = await fetch('https://morion.okdesk.ru/api/v1/companies/list?api_token=' + token + '&page[direction]=forward&page[size]=100&page[from_id]=200', {
-                        method: "GET",
-                        headers: {
-                            "Content-Type": "application/json"
-                        }
-                    });
-                data = await res.json();
-                data.forEach((item) => {
-                    list.push(item)
-                })
+            } while (data.length == 100)
 
-                // Задержка 1 сек для Окдеска
-                setTimeout(function() {
-                    console.log("LIST LENGTH: ", data.length)
-                }, 1000);
-
-            // } while (data.length == 100)
-
-            console.log("FULL LIST: ", list)
+            // console.log("FULL LIST: ", list)
 
             setResponse(200, 'Ok', list)
             return response    

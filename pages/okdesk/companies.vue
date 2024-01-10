@@ -3,7 +3,7 @@
         <div class="page-title">
             Клиенты из Okdesk
         </div>
-    
+  
         <v-row>
             <v-col>
                 <!-- <nuxt-link to="/partners/clients/create">
@@ -45,9 +45,25 @@
         <template v-slot:expanded-row="{ columns, item }">
             <tr>
               <td :colspan="columns.length">
-                <PartnerOwner :partner="item.key"/>
+                
               </td>
             </tr>
+        </template>
+
+        <template v-slot:item.id="{ item }">
+            <div style="width: 50px;">{{ item.id }}</div>
+        </template>
+
+        <template v-slot:item.name="{ item }">
+            <div style="width: 200px;">{{ item.name }}</div>
+        </template>
+
+        <template v-slot:item.urcom="{ item }">
+            <div style="width: 200px;">{{ item.urcom.value }}</div>
+        </template>
+
+        <template v-slot:item.fr="{ item }">
+            <div style="width: 200px;">{{ item.fr.value }}</div>
         </template>
   
         <template v-slot:item.actions="{ item }">
@@ -77,7 +93,6 @@
                 <v-dialog v-model="dialog.delete" persistent width="auto">
                   <v-card class="dialog-delete">
                     <v-card-text class="text-h6">Удалить запись?</v-card-text>
-                    <v-card-text>Удаление записи приведет к удалению всех <br>связанных с ним документов!</v-card-text>
                     <v-card-actions>
                       <v-spacer></v-spacer>
                       <v-btn color="green-darken-1" variant="text" @click="dialog_delete_yes">Да</v-btn>
@@ -132,9 +147,9 @@
     const headers = [
         { title: '', key: 'data-table-expand' },
         { title: 'Okdesk ID', key: 'id' },
-        { title: 'Сегмент', key: 'segment' },
-        { title: 'Группа компаний', key: 'group' },
         { title: 'Наименование', key: 'name' },
+        { title: 'Юр. наименование', key: 'urcom' },
+        { title: 'Фискальный регистратор', key: 'fr' },
         { title: 'Действия', key: 'actions', sortable: false }
     ]
     
@@ -243,12 +258,11 @@
                 }),
             })
     
-            console.log("COMPANIES: ", data.value)
-    
-            if (data.value.code == 200) {
+            if (data.value && data.value.code == 200) {
                 items.value = data.value.data
                 items.value.forEach((item) => {
-                    //...
+                    item['urcom'] = item.parameters[2]
+                    item['fr'] = item.parameters[4]
                 })
             }
             indexStore.progress = false
