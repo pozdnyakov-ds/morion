@@ -50,11 +50,17 @@ export default defineNuxtConfig({
     JWT_ACCESS_TOKEN_EXPIRATION: process.env.JWT_ACCESS_TOKEN_EXPIRATION,
     JWT_ACCESS_TOKEN_EXPIRATION_DAYS: process.env.JWT_ACCESS_TOKEN_EXPIRATION_DAYS,
 
+    CLIENT_ID: process.env.CLIENT_ID,
+    CLIENT_SECRET: process.env.CLIENT_SECRET,
+    OKDESK_TOKEN: process.env.OKDESK_TOKEN,
+
     public: {
       BASE_URL: process.env.NODE_ENV === "development"
       ? "https://localhost:3000"
       : "https://display24.ru",
-      RECAPTCHA_SITE_KEY: process.env.RECAPTCHA_SITE_KEY
+      RECAPTCHA_SITE_KEY: process.env.RECAPTCHA_SITE_KEY,
+      REDIRECT_URI: process.env.REDIRECT_URI,
+      SPREAD_SHEET_ID: process.env.SPREAD_SHEET_ID
     }  
   },
   modules: [

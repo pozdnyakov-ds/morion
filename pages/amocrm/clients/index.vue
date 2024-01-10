@@ -1,14 +1,14 @@
 <template>
 <div class="main-content">
     <div class="page-title">
-        Клиенты и рекламодатели партнера
+        Клиенты из AmoCRM
     </div>
 
     <v-row>
         <v-col>
-            <nuxt-link to="/partners/clients/create">
+            <!-- <nuxt-link to="/partners/clients/create">
                 <v-btn style="background-color: #28a745; color: #fff;">Создать</v-btn>
-            </nuxt-link>
+            </nuxt-link> -->
         </v-col>
         <v-col>
             <v-text-field
@@ -50,29 +50,19 @@
         </tr>
     </template>
 
+    <template v-slot:item.segment="{ item }">
+        <div>{{ getField(item, 1311959) }}</div>
+    </template>
+
+    <template v-slot:item.group="{ item }">
+        <div>{{ getField(item, 1312015) }}</div>
+    </template>
+
     <template v-slot:item.name="{ item }">
         <div>{{ item.name }}</div>
         <div style="font-size: 90%; color: #666;">{{ item.description }}</div>
     </template>
 
-    <template v-slot:item.summary="{ item }">
-        <div>{{ (item.wallet - item.cost).toFixed(2) }}</div>
-    </template>
-
-    <template v-slot:item.scope="{ item }">
-        <div v-for="ind in item.scope" :key="item.id" style="padding: 5px 0 5px 0; display: inline-block;">
-            <div class="chips">{{ scopes.get(ind) }}</div>
-        </div>
-    </template>
-
-    <template v-slot:item.created_at="{ item }">
-        <div>{{ item.created_at.split('T')[0] }}</div>
-    </template>
-
-    <template v-slot:item.status="{ item }">
-        <v-checkbox-btn class="item-action" v-model="item.status" @click="statusToggle(item)"></v-checkbox-btn>
-    </template>
-    
     <template v-slot:item.actions="{ item }">
         <v-icon class="item-action" size="small" @click="editRecord(item.id)">fa-regular fa-pen-to-square</v-icon>
         <v-icon class="item-action" size="small" @click="deleteRecord(item.id)">fa-solid fa-trash</v-icon>
@@ -133,12 +123,6 @@ const dialog = reactive({
     delete: false,
     action:false
 })
-const scopes = new Map([
-    [0, 'Партнер'],
-    [1, 'Клиент'], 
-    [2, 'Рекламодатель'],
-    [999, 'Разработчик']
-])
 
 const partner = reactive({
     selected: null,
@@ -160,15 +144,24 @@ watch(showBy, (newValue) => {
 
 const headers = [
     { title: '', key: 'data-table-expand' },
+    { title: 'AmoCRM ID', key: 'id' },
+    { title: 'Сегмент', key: 'segment' },
+    { title: 'Группа компаний', key: 'group' },
     { title: 'Наименование', key: 'name' },
-    { title: 'Кошелек', key: 'wallet' },
-    { title: 'Начислено', key: 'cost' },
-    { title: 'Баланс', key: 'summary' },
-    { title: 'Права', key: 'scope' },
-    { title: 'Создано', key: 'created_at' },
-    { title: 'Статус', key: 'status' },
     { title: 'Действия', key: 'actions', sortable: false }
 ]
+
+const getField = (item, id) => {
+    console.log("ITEM: ", id, item)
+    const custom_fields_values = item.custom_fields_values
+    var value = null
+    custom_fields_values.forEach((field) => {
+        if (field.field_id == id) {
+            value = field.values[0].value
+        }
+    })
+    return value
+}
 
 const statusToggle = async (item) => {
     const id = item.id
@@ -176,7 +169,7 @@ const statusToggle = async (item) => {
 
     try {
         indexStore.progress = true
-        const { data, error } = await userStore.myFetch('/api/partners', {
+        const { data, error } = await userStore.myFetch('/api/amocrm', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -218,7 +211,7 @@ const dialog_edit_yes = async () => {
 const dialog_delete_yes = async () => {
     dialog.delete = false
 
-    const { data, error } = await userStore.myFetch('/api/partners', {
+    const { data, error } = await userStore.myFetch('/api/amocrm', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -252,23 +245,24 @@ const loadRecords = async () => {
 
     try {
         indexStore.progress = true
-        const { data, error } = await userStore.myFetch('/api/partners', {
+        const { data, error } = await userStore.myFetch('/api/amocrm', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${userStore.accessToken}`
             },
             body: JSON.stringify({ 
-                action: 'index.selflist',
-                parent: partner.selected, 
+                action: 'get.list', 
             }),
         })
+
+        console.log("LIST: ", data.value)
 
         if (data.value.code == 200) {
             items.value = data.value.data
             items.value.forEach((item) => {
-                if (item.status == 1) item.status = true
-                else item.status = false
+                item['segment'] = null
+                item['group'] = null
             })
         }
         indexStore.progress = false

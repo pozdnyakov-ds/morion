@@ -2,7 +2,7 @@
 <div>
     <v-footer padless>
         <v-col class="text-center" cols="12">
-            2017-{{ new Date().getFullYear() }} — <strong>Display24</strong>
+            2012-{{ new Date().getFullYear() }} — <strong>Morion</strong>
         </v-col>
     </v-footer>  
 </div>

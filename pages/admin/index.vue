@@ -1,81 +1,79 @@
 <template>
     <div class="main-content">
         <div class="page-title">
-            Статистика  
+            AmoCRM Setup  
         </div>
-    
-        <!-- <template v-slot:text>
-            <v-text-field
-              v-model="search"
-              label="Search"
-              prepend-inner-icon="mdi-magnify"
-              single-line
-              variant="outlined"
-              hide-details
-            ></v-text-field>
-          </template> -->
-      
-        <v-data-table
-            :headers="headers"
-            :items="items"
-            :search="search"
-        >
-        <template v-slot:item.name="{ item }">
-            ={{ item.name }}=
-        </template>
-
-        </v-data-table>
+        <v-row>
+            <v-col>
+                <div>Получить код на странице: 
+                    <a target=_blank href="https://moriontech.amocrm.ru/amo-market/#category-installed">
+                        https://moriontech.amocrm.ru/amo-market/#category-installed
+                    </a>
+                </div>
+                <div class="input-group mb-6">
+                    <v-textarea v-model="code" clearable label="AmoCRM Code" outlined></v-textarea>
+                </div>
+            </v-col>
+        </v-row>
+        <v-row>
+            <v-col>
+                <div style="padding: 0px; margin-bottom: 0px;">
+                    <v-btn style="background-color: #119DFF; color: #fff; margin-left: 15px;" @click.prevent="update()" :disabled="code.length == 0">Обновить</v-btn>
+                </div>
+            </v-col>
+        </v-row>
 
     </div>
 </template>
     
 <script setup>
 const indexStore = useIndexStore()
-const userStore = useUserStore()   
+const userStore = useUserStore() 
 
-const search = ref(null)
-const headers = [
-    {
-    align: 'start',
-    key: 'name',
-    sortable: false,
-    title: 'Dessert (100g serving)',
-    },
-    { key: 'calories', title: 'Calories' },
-    { key: 'fat', title: 'Fat (g)' },
-    { key: 'carbs', title: 'Carbs (g)' },
-    { key: 'protein', title: 'Protein (g)' },
-    { key: 'iron', title: 'Iron (%)' },
-]
-const items = ref([
-    {
-        name: 'Frozen Yogurt',
-        calories: 159,
-        fat: 6.0,
-        carbs: 24,
-        protein: 4.0,
-        iron: 1,
-    },
-    {
-        name: 'Ice cream sandwich',
-        calories: 237,
-        fat: 9.0,
-        carbs: 37,
-        protein: 4.3,
-        iron: 1,
-    }
-])
+const code = ref('')
 
 definePageMeta({
     layout: "default",
     middleware: ['auth', 'access']
 })
+
+const update = async () => {
+    
+    // Get IIKO access & refresh tokens
+    try {
+		indexStore.progress = true
+
+		const { data, error } = await userStore.myFetch('/api/amocrm', { 
+			method: 'post', 
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${userStore.accessToken}`
+            },
+			body: { 
+				action: 'get.tokens', 
+                code: code.value,
+			} 
+		})
+		indexStore.progress = false
+        //console.log("DATA: ", data.value)
+
+		if (data.value && data.value.code == 200) {
+            useNuxtApp().$toast.success(`Код: ${data.value.code}. Успешное обновление токенов`);
+            code.value = ''
+
+		} else {
+			useNuxtApp().$toast.error('Ошибка: ' + error.value);
+		}
+
+	} catch (e) {
+        useNuxtApp().$toast.error('Ошибка: ' + e);
+		indexStore.progress = false
+	}
+
+}
    
 </script>
     
 <style lang="scss" scoped>
-.item-action {
-    color: #666;
-    margin-right: 10px;
-}
+
 </style>
