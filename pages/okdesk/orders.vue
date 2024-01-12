@@ -69,6 +69,11 @@
             <div v-if="item.deleted==0" style="width: 125px;">{{ item.created_at.split("T")[0] }} {{ item.created_at.split("T")[1].substring(0, 5) }}</div>
             <div v-if="item.deleted==1" style="width: 125px; text-decoration: line-through; color: #ddd;">{{ item.created_at.split("T")[0] }} {{ item.created_at.split("T")[1].substring(0, 5) }}</div>
         </template>
+        
+        <template v-slot:item.spent_time_total="{ item }">
+            <div v-if="item.deleted==0" style="width: 125px;">{{ (item.spent_time_total * 60).toFixed(0) }} мин</div>
+            <div v-if="item.deleted==1" style="width: 125px; text-decoration: line-through; color: #ddd;">{{ (item.spent_time_total * 60).toFixed(0) }} мин</div>
+        </template>
 
         <template v-slot:item.actions="{ item }">
             <div style="width: 100px;">
@@ -156,6 +161,7 @@
         { title: 'Клиент', key: 'company_name' },
         { title: 'Наименование', key: 'title' },
         { title: 'Создано', key: 'created_at' },
+        { title: 'Трудозатраты', key: 'spent_time_total' },
         { title: 'Действия', key: 'actions', sortable: false }
     ]
     

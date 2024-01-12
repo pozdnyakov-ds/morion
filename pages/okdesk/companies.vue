@@ -149,6 +149,7 @@
         { title: 'Okdesk ID', key: 'id' },
         { title: 'Наименование', key: 'name' },
         { title: 'Юр. наименование', key: 'urcom' },
+        { title: 'ИНН', key: 'inn' },
         { title: 'Фискальный регистратор', key: 'fr' },
         { title: 'Действия', key: 'actions', sortable: false }
     ]

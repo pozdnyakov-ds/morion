@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
             var step = 0
 
             do { 
-                res = await fetch('https://morion.okdesk.ru/api/v1/companies/list?api_token=' + token + '&page[direction]=forward&page[size]=100&page[from_id]=' + step, {
+                res = await fetch('https://morion.okdesk.ru/api/v1/companies/list?api_token=' + token + '&page[direction]=forward&page[size]=100&page[from_id]=' + step + '&category_ids[]=0&category_ids[]=2&category_ids[]=3&category_ids[]=4&category_ids[]=9', {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json"
@@ -75,14 +75,14 @@ export default defineEventHandler(async (event) => {
             var sqlData = ""
             list.forEach((item, index) => {
                 const id = item.id
-                if (index > 200) return
                 const name = item.name ? item.name.replaceAll("'", "''") : ''
                 const urcom = getParam(item.parameters, 'urcom')  
                 const whois = getParam(item.parameters, 'whois')
                 const fr = getParam(item.parameters, 'FR')
+                const inn = getParam(item.parameters, 'inn')
                 const active = item.active ? 1 : 0
-                sqlData = sqlData + `(${id}, '${name}', '${urcom}', '${whois}', '${fr}', NOW(), ${active})`
-                if (index < 200) {
+                sqlData = sqlData + `(${id}, '${name}', '${urcom}', '${whois}', '${fr}', '${inn}', NOW(), ${active})`
+                if (index < list.length - 1) {
                     sqlData = sqlData + ", "
                 }
             })
@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
             // Записать изменения в БД
             const data2 = await new Promise((resolve, reject) => {
                 db.query(`INSERT INTO okdesk_companies  
-                    (id, name, urcom, whois, fr, last_update, active) 
+                    (id, name, urcom, whois, fr, inn, last_update, active) 
                     VALUES ${sqlData}
                     ON DUPLICATE KEY UPDATE
                     last_update=NOW()`, 
@@ -105,7 +105,7 @@ export default defineEventHandler(async (event) => {
 
             // Выбрать ВСЕ компании из БД
             const data6 = await new Promise((resolve, reject) => {
-                db.query(`SELECT id, name, urcom, whois, fr, last_update, active
+                db.query(`SELECT id, name, urcom, whois, fr, inn, last_update, active
                     FROM okdesk_companies
                     WHERE deleted=0
                     ORDER BY name`, 
@@ -180,12 +180,36 @@ export default defineEventHandler(async (event) => {
 
             console.log("Кол-во новых записей в итерации и новых: ", data.length, list2.length)
 
-        } while (data.length == 50 && list2.length < (max_okdesk_id - max_db_id) && list2.length < 5000)
+        } while (data.length == 50 && list2.length < (max_okdesk_id - max_db_id) && list2.length < 2000)
 
         console.log("Кол-во новых записей всего: ", list2.length)
         console.log("max_okdesk_id: ", max_okdesk_id)
         const count = max_okdesk_id - max_db_id 
         console.log("Кол-во новых записей как разница: ", count)
+
+        // Запросить расширенные данные по новым записям
+        for (let i = 0; i < list2.length; i++) {
+            const item = list2[i]
+
+            res = await fetch(`https://morion.okdesk.ru/api/v1/issues/${item.id}?api_token=` + token2, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+            data = await res.json()
+            const spent_time = data && data.spent_time_total ? data.spent_time_total : 0
+            console.log("Spent_time_total [" + i + "]: ", spent_time)
+
+            // Задержка 1 сек для Окдеска
+            setTimeout(function() {
+                //...
+            }, 1000);
+
+            list2[i]['spent_time_total'] = spent_time
+        }
+
+        console.log("READY: ", list2)
 
         // Подготовить данные для БД
         var sqlData = ""
@@ -196,10 +220,11 @@ export default defineEventHandler(async (event) => {
             const status = item.status && item.status.code ? item.status.code : ''
             const type = item.type && item.type.code ? item.type.code : ''
             const priority = item.priority && item.priority.code ? item.priority.code : ''
+            const spent_time_total = item.spent_time_total ? item.spent_time_total : 0
             const created_at = item.created_at ? item.created_at : ''
 
             sqlData = sqlData + `(${id}, '${title}', '${company_id}', 
-                '${status}', '${type}', '${priority}', '${created_at}', NOW())`
+                '${status}', '${type}', '${priority}', ${spent_time_total}, '${created_at}', NOW())`
             if (index < list2.length - 1) {
                 sqlData = sqlData + ", "
             }
@@ -209,7 +234,7 @@ export default defineEventHandler(async (event) => {
         if (count > 0) {
             const data4 = await new Promise((resolve, reject) => {
                 db.query(`INSERT INTO okdesk_orders  
-                    (id, title, company_id, status, type, priority, created_at, updated_at) 
+                    (id, title, company_id, status, type, priority, spent_time_total, created_at, updated_at) 
                     VALUES ${sqlData}
                     ON DUPLICATE KEY UPDATE
                     updated_at=NOW()`, 
@@ -226,11 +251,11 @@ export default defineEventHandler(async (event) => {
         // Выбрать ВСЕ заказы из БД
         const data5 = await new Promise((resolve, reject) => {
             db.query(`SELECT okdesk_orders.id, okdesk_orders.title, okdesk_orders.company_id, 
-                okdesk_orders.status, okdesk_orders.type, okdesk_orders.priority, okdesk_orders.created_at, 
+                okdesk_orders.status, okdesk_orders.type, okdesk_orders.priority, okdesk_orders.spent_time_total, okdesk_orders.created_at, 
                 okdesk_orders.updated_at, okdesk_orders.deleted,
                 okdesk_companies.name AS company_name
                 FROM okdesk_orders
-                LEFT JOIN okdesk_companies ON okdesk_orders.company_id = okdesk_companies.id
+                RIGHT JOIN okdesk_companies ON okdesk_orders.company_id = okdesk_companies.id
                 WHERE 1
                 ORDER BY created_at DESC`, 
             [], (err, data) => {
