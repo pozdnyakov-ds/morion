@@ -51,36 +51,42 @@
         </template>
 
         <template v-slot:item.id="{ item }">
-            <div style="width: 50px;">{{ item.id }}</div>
+            <div v-if="item.deleted==0" style="width: 50px;">{{ item.id }}</div>
+            <div v-if="item.deleted==1" style="width: 50px; text-decoration: line-through; color: #ddd;">{{ item.id }}</div>
         </template>
 
-        <template v-slot:item.name="{ item }">
-            <div style="width: 200px;">{{ item.name }}</div>
+        <template v-slot:item.company_name="{ item }">
+            <div v-if="item.deleted==0" style="width: 150px;">{{ item.company_name ? item.company_name : "-" }}</div>
+            <div v-if="item.deleted==1" style="width: 150px;text-decoration: line-through; color: #ddd;">{{ item.company_name ? item.company_name : "-" }}</div>
         </template>
 
-        <template v-slot:item.urcom="{ item }">
-            <div style="width: 200px;">{{ item.urcom.value }}</div>
+        <template v-slot:item.title="{ item }">
+            <div v-if="item.deleted==0" style="">{{ item.title }}</div>
+            <div v-if="item.deleted==1" style="text-decoration: line-through; color: #ddd;">{{ item.title }}</div>
         </template>
 
-        <template v-slot:item.fr="{ item }">
-            <div style="width: 200px;">{{ item.fr.value }}</div>
+        <template v-slot:item.created_at="{ item }">
+            <div v-if="item.deleted==0" style="width: 125px;">{{ item.created_at.split("T")[0] }} {{ item.created_at.split("T")[1].substring(0, 5) }}</div>
+            <div v-if="item.deleted==1" style="width: 125px; text-decoration: line-through; color: #ddd;">{{ item.created_at.split("T")[0] }} {{ item.created_at.split("T")[1].substring(0, 5) }}</div>
         </template>
-  
+
         <template v-slot:item.actions="{ item }">
-            <v-icon class="item-action" size="small" @click="editRecord(item.id)">fa-regular fa-pen-to-square</v-icon>
-            <v-icon class="item-action" size="small" @click="deleteRecord(item.id)">fa-solid fa-trash</v-icon>
+            <div style="width: 100px;">
+                <v-icon v-if="item.deleted==0" class="item-action" size="small" @click="deleteRecord(item.id)">fa-solid fa-trash</v-icon>
+                <v-icon v-if="item.deleted==1" class="item-action" size="small" @click="restoreRecord(item.id)">fa-solid fa-trash-can-arrow-up</v-icon>
+            </div>
         </template>
     
         </v-data-table>
     
         <client-only>
             <v-row justify="center">
-                <v-dialog v-model="dialog.edit" persistent width="auto">
+                <v-dialog v-model="dialog.restore" persistent width="auto">
                   <v-card class="dialog-edit">
-                    <v-card-text class="text-h6">Редактировать запись?</v-card-text>
+                    <v-card-text class="text-h6">Восстановить запись?</v-card-text>
                     <v-card-actions>
                       <v-spacer></v-spacer>
-                      <v-btn color="green-darken-1" variant="text" @click="dialog_edit_yes">Да</v-btn>
+                      <v-btn color="green-darken-1" variant="text" @click="dialog_restore_yes">Да</v-btn>
                       <v-btn color="green-darken-1" variant="text" @click="dialog_action_no">Нет</v-btn>
                     </v-card-actions>
                   </v-card>
@@ -121,7 +127,7 @@
     const page = ref(1)
     const search = ref('')
     const dialog = reactive({
-        edit: false,
+        restore: false,
         delete: false,
         action:false
     })
@@ -147,55 +153,14 @@
     const headers = [
         { title: '', key: 'data-table-expand' },
         { title: 'Okdesk ID', key: 'id' },
-        { title: 'Наименование', key: 'name' },
-        { title: 'Юр. наименование', key: 'urcom' },
-        { title: 'Фискальный регистратор', key: 'fr' },
+        { title: 'Клиент', key: 'company_name' },
+        { title: 'Наименование', key: 'title' },
+        { title: 'Создано', key: 'created_at' },
         { title: 'Действия', key: 'actions', sortable: false }
     ]
     
-    // const getField = (item, id) => {
-    //     console.log("ITEM: ", id, item)
-    //     const custom_fields_values = item.custom_fields_values
-    //     var value = null
-    //     custom_fields_values.forEach((field) => {
-    //         if (field.field_id == id) {
-    //             value = field.values[0].value
-    //         }
-    //     })
-    //     return value
-    // }
-    
-    const statusToggle = async (item) => {
-        const id = item.id
-        const status = !item.status
-    
-        try {
-            indexStore.progress = true
-            const { data, error } = await userStore.myFetch('/api/amocrm', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${userStore.accessToken}`
-                },
-                body: JSON.stringify({ 
-                    action: 'index.status',
-                    id: id,
-                    status: status
-                }),
-            })
-            if (data.value.code == 200) {
-                useNuxtApp().$toast.success('Статус обновлен');
-            }
-            indexStore.progress = false
-    
-        } catch(e) {
-            // console.log("Change status error: ", e)
-            indexStore.progress = false
-        }
-    }
-    
-    const editRecord = (id) => {
-        dialog.edit = true
+    const restoreRecord = (id) => {
+        dialog.restore = true
         dialog.action = id
     }
     
@@ -203,31 +168,51 @@
         dialog.delete = true
         dialog.action = id
     }
+
+    const dialog_restore_yes = async () => {
+        dialog.restore = false
     
-    const dialog_edit_yes = async () => {
-        dialog.edit = false
-        const router = useRouter()
-        router.push({ path: `/partners/clients/${dialog.action}` })
-    }
-    
-    const dialog_delete_yes = async () => {
-        dialog.delete = false
-    
-        const { data, error } = await userStore.myFetch('/api/amocrm', {
+        const { data, error } = await userStore.myFetch('/api/okdesk', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${userStore.accessToken}`
             },
             body: JSON.stringify({ 
-                action: 'index.delete',
+                action: 'order.restore',
+                id: dialog.action
+            }),
+        })
+    
+        if (data) {
+            useNuxtApp().$toast.success('Запись восстановлена');
+
+        } else {
+            useNuxtApp().$toast.error('Ошибка восстановления записи!');
+        }
+    
+        dialog.action = 0
+        loadRecords()
+    }
+    
+    const dialog_delete_yes = async () => {
+        dialog.delete = false
+    
+        const { data, error } = await userStore.myFetch('/api/okdesk', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${userStore.accessToken}`
+            },
+            body: JSON.stringify({ 
+                action: 'order.delete',
                 id: dialog.action
             }),
         })
     
         if (data) {
             useNuxtApp().$toast.success('Запись удалена');
-            localStorage.removeItem('partner')
+
         } else {
             useNuxtApp().$toast.error('Ошибка удаления записи!');
         }
@@ -237,13 +222,14 @@
     }
     
     const dialog_action_no = () => {
-        dialog.edit = false
+        dialog.restore = false
         dialog.delete = false
         dialog.action = 0
     }
     
     const loadRecords = async () => {
         items.value.splice(0)
+        items.value = []
     
         try {
             indexStore.progress = true
@@ -254,15 +240,15 @@
                     Authorization: `Bearer ${userStore.accessToken}`
                 },
                 body: JSON.stringify({ 
-                    action: 'get.companies', 
+                    action: 'get.orders', 
                 }),
             })
     
             if (data.value && data.value.code == 200) {
                 items.value = data.value.data
                 items.value.forEach((item) => {
-                    item['urcom'] = item.parameters[2]
-                    item['fr'] = item.parameters[4]
+                    // item['urcom'] = item.parameters[2]
+                    // item['fr'] = item.parameters[4]
                 })
             }
             indexStore.progress = false

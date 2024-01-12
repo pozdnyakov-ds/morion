@@ -59,16 +59,16 @@
         </template>
 
         <template v-slot:item.urcom="{ item }">
-            <div style="width: 200px;">{{ item.urcom.value }}</div>
+            <div style="width: 200px;">{{ item.urcom }}</div>
         </template>
 
         <template v-slot:item.fr="{ item }">
-            <div style="width: 200px;">{{ item.fr.value }}</div>
+            <div style="width: 200px;">{{ item.fr }}</div>
         </template>
   
         <template v-slot:item.actions="{ item }">
-            <v-icon class="item-action" size="small" @click="editRecord(item.id)">fa-regular fa-pen-to-square</v-icon>
-            <v-icon class="item-action" size="small" @click="deleteRecord(item.id)">fa-solid fa-trash</v-icon>
+            <!-- <v-icon class="item-action" size="small" @click="editRecord(item.id)">fa-regular fa-pen-to-square</v-icon> -->
+            <!-- <v-icon class="item-action" size="small" @click="deleteRecord(item.id)">fa-solid fa-trash</v-icon> -->
         </template>
     
         </v-data-table>
@@ -145,55 +145,14 @@
     })
     
     const headers = [
-        { title: '', key: 'data-table-expand' },
+        // { title: '', key: 'data-table-expand' },
         { title: 'Okdesk ID', key: 'id' },
         { title: 'Наименование', key: 'name' },
         { title: 'Юр. наименование', key: 'urcom' },
         { title: 'Фискальный регистратор', key: 'fr' },
         { title: 'Действия', key: 'actions', sortable: false }
     ]
-    
-    // const getField = (item, id) => {
-    //     console.log("ITEM: ", id, item)
-    //     const custom_fields_values = item.custom_fields_values
-    //     var value = null
-    //     custom_fields_values.forEach((field) => {
-    //         if (field.field_id == id) {
-    //             value = field.values[0].value
-    //         }
-    //     })
-    //     return value
-    // }
-    
-    const statusToggle = async (item) => {
-        const id = item.id
-        const status = !item.status
-    
-        try {
-            indexStore.progress = true
-            const { data, error } = await userStore.myFetch('/api/amocrm', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${userStore.accessToken}`
-                },
-                body: JSON.stringify({ 
-                    action: 'index.status',
-                    id: id,
-                    status: status
-                }),
-            })
-            if (data.value.code == 200) {
-                useNuxtApp().$toast.success('Статус обновлен');
-            }
-            indexStore.progress = false
-    
-        } catch(e) {
-            // console.log("Change status error: ", e)
-            indexStore.progress = false
-        }
-    }
-    
+       
     const editRecord = (id) => {
         dialog.edit = true
         dialog.action = id
@@ -213,21 +172,21 @@
     const dialog_delete_yes = async () => {
         dialog.delete = false
     
-        const { data, error } = await userStore.myFetch('/api/amocrm', {
+        const { data, error } = await userStore.myFetch('/api/okdesk', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${userStore.accessToken}`
             },
             body: JSON.stringify({ 
-                action: 'index.delete',
+                action: 'company.delete',
                 id: dialog.action
             }),
         })
     
         if (data) {
             useNuxtApp().$toast.success('Запись удалена');
-            localStorage.removeItem('partner')
+
         } else {
             useNuxtApp().$toast.error('Ошибка удаления записи!');
         }
@@ -244,6 +203,7 @@
     
     const loadRecords = async () => {
         items.value.splice(0)
+        items.value = []
     
         try {
             indexStore.progress = true
@@ -261,11 +221,11 @@
             if (data.value && data.value.code == 200) {
                 items.value = data.value.data
                 items.value.forEach((item) => {
-                    item['urcom'] = item.parameters[2]
-                    item['fr'] = item.parameters[4]
+                    //...
                 })
             }
             indexStore.progress = false
+            console.log("OKDESK COMPANIES: ", items.value)
     
         } catch(e) {
             // console.log("ITEMS ERROR: ", e)
