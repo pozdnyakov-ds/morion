@@ -206,7 +206,7 @@ export default defineEventHandler(async (event) => {
             list2[i]['spent_time_total'] = spent_time
         }
 
-        console.log("READY: ", list2)
+        //console.log("READY: ", list2)
 
         // Подготовить данные для БД
         var sqlData = ""
