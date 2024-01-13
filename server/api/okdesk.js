@@ -1,6 +1,7 @@
 import db from "../../config/database"
 import checkAccessToken from "~/config/token"
 import send_email from "../../config/send_email"
+import generatePdf from "../../config/pdf"
 
 export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig()
@@ -207,8 +208,6 @@ export default defineEventHandler(async (event) => {
             list2[i]['spent_time_total'] = spent_time
         }
 
-        //console.log("READY: ", list2)
-
         // Подготовить данные для БД
         var sqlData = ""
         list2.forEach((item, index) => {
@@ -377,11 +376,15 @@ export default defineEventHandler(async (event) => {
             return response
         }
 
-        // Подготовить данные
-        console.log("SQL company data: ", dataSend)
+        // Подготовить данные: "/temp/output.pdf"
+        const result = await generatePdf()
+        const file = "/temp/output.pdf"
 
-        const send_data = await send_email(idSend, subject, num, date, ul, inn, kpp, 
+        // Отправить письмо
+        const send_data = await send_email(idSend, subject, file, num, date, ul, inn, kpp, 
             address, email, whatsapp, telegram, type, items)
+        console.log("CODE: ", send_data)
+
         if (send_data && send_data.code == 200) {
             setResponse(200, 'Company send OK', null)
         } else {

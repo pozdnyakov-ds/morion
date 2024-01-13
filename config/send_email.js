@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
     },
   });
 
-const send_email = (id, subject, num, date, ul, inn, kpp, 
+const send_email = async (id, subject, file, num, date, ul, inn, kpp, 
     address, email, whatsapp, telegram, type, items) => {
 
     var summary = 0.00
@@ -65,8 +65,9 @@ const send_email = (id, subject, num, date, ul, inn, kpp,
 
     <b>Счет во вложении...</b>
     </td></tr></table>`;
-   
-    const info = transporter.sendMail({
+
+    var error_result = null
+    const info = await transporter.sendMail({
         from: `Морион <${config.MAIL_AUTH_USER}>`,
         to: email,
         subject: subject,
@@ -74,6 +75,12 @@ const send_email = (id, subject, num, date, ul, inn, kpp,
         html: content,
         sender: config.MAIL_AUTH_USER,
         replyTo: config.MAIL_AUTH_USER,
+        attachments: [
+            {
+                filename: 'Счет.pdf',
+                path: "/temp/bill.pdf"
+            }
+        ],
         dkim: {
             domainName: config.MAIL_DOMAIN_NAME,
             keySelector: config.MAIL_KEY_SELECTOR,
@@ -81,17 +88,15 @@ const send_email = (id, subject, num, date, ul, inn, kpp,
         },
         },
     function (error, info) {
-        var resp = false;
-        if (error) {
-            return { code: 400, message: 'Ошибка отправки Email', data: null }
-
-        } else {
-            setResponse(200, 'Email отправлен', null)
-            return { code: 200, message: 'Email отправлен', data: null }
-        }
+        error_result = error
     })
 
-    return { code: 400, message: 'Ошибка отправки Email', data: null }    
+    if (error_result) {
+        return { code: 400, message: 'Ошибка отправки Email', data: null }
+
+    } else {
+        return { code: 200, message: 'Email отправлен', data: null }
+    }
 }
 
 export default send_email

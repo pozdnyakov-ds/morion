@@ -226,7 +226,6 @@
                 }]
             }),
         })
-        //console.log("SEND RESULT: ", data)
 
         if (data && data._rawValue && data._rawValue.code && data._rawValue.code==200) {
             useNuxtApp().$toast.success('Документ отправлен');
