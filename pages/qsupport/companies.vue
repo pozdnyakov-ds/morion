@@ -164,36 +164,7 @@
     //     })
     //     return value
     // }
-    
-    const statusToggle = async (item) => {
-        const id = item.id
-        const status = !item.status
-    
-        try {
-            indexStore.progress = true
-            const { data, error } = await userStore.myFetch('/api/amocrm', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${userStore.accessToken}`
-                },
-                body: JSON.stringify({ 
-                    action: 'index.status',
-                    id: id,
-                    status: status
-                }),
-            })
-            if (data.value.code == 200) {
-                useNuxtApp().$toast.success('Статус обновлен');
-            }
-            indexStore.progress = false
-    
-        } catch(e) {
-            // console.log("Change status error: ", e)
-            indexStore.progress = false
-        }
-    }
-    
+   
     const editRecord = (id) => {
         dialog.edit = true
         dialog.action = id

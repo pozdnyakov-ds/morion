@@ -69,7 +69,7 @@
         <template v-slot:item.actions="{ item }">
             <!-- <v-icon class="item-action" size="small" @click="editRecord(item.id)">fa-regular fa-pen-to-square</v-icon> -->
             <!-- <v-icon class="item-action" size="small" @click="deleteRecord(item.id)">fa-solid fa-trash</v-icon> -->
-            <v-icon class="item-action" size="small" @click="sendRecord(item.id)">fa-regular fa-envelope</v-icon>
+            <v-icon class="item-action" size="small" @click="sendRecord(item)">fa-regular fa-envelope</v-icon>
         </template>
     
         </v-data-table>
@@ -171,9 +171,9 @@
         { title: 'Действия', key: 'actions', sortable: false }
     ]
        
-    const sendRecord = (id) => {
+    const sendRecord = (item) => {
         dialog.send = true
-        dialog.action = id
+        dialog.action = item
     }
 
     const editRecord = (id) => {
@@ -194,6 +194,8 @@
     
     const dialog_send_yes = async () => {
         dialog.send = false
+        const id = dialog.action.id
+        const urcom = dialog.action.urcom
     
         const { data, error } = await userStore.myFetch('/api/okdesk', {
             method: 'POST',
@@ -203,10 +205,28 @@
             },
             body: JSON.stringify({ 
                 action: 'company.send',
-                id: dialog.action
+                id: id,
+                num: '0001',
+                date: '25.01.2024',
+                ul: urcom,
+                inn: '165111111',
+                kpp: '165222222',
+                address: '420139, Казань, ул. Р. Зорге, д.93',
+                email: "2903015@mail.ru", 
+                type: 1,
+                items: [{
+                    name: "Товар 1",
+                    price: 1.50,
+                    quantity: 1.00
+                },
+                {
+                    name: "Товар 2",
+                    price: 2.50,
+                    quantity: 2.00
+                }]
             }),
         })
-        console.log("SEND RESULT: ", data._rawValue)
+        //console.log("SEND RESULT: ", data)
 
         if (data && data._rawValue && data._rawValue.code && data._rawValue.code==200) {
             useNuxtApp().$toast.success('Документ отправлен');
