@@ -151,8 +151,7 @@ export default defineEventHandler(async (event) => {
         var res = null
         var data = null
         var page = 1
-        var max_okdesk_id = 0
-
+        
         do { 
             res = await fetch('https://morion.okdesk.ru/api/v1/issues/list?api_token=' + token2 + '&page[direction]=forward&page[size]=50&page[number]=' + page, {
                     method: "GET",
@@ -162,9 +161,10 @@ export default defineEventHandler(async (event) => {
                 });
             data = await res.json();
             
+            var min_okdesk_id = Number.MAX_SAFE_INTEGER
             data.forEach((item) => {
-                if (item.id > max_okdesk_id) {
-                    max_okdesk_id = item.id
+                if (item.id < min_okdesk_id) {
+                    min_okdesk_id = item.id
                 }
                 if (item.id > max_db_id) {
                     list2.push(item)
@@ -178,14 +178,11 @@ export default defineEventHandler(async (event) => {
                 //...
             }, 1000);
 
-            console.log("Кол-во новых записей в итерации и новых: ", data.length, list2.length)
+            console.log("Кол-во новых записей в итерации и новых: ", page, data.length, list2.length)
 
-        } while (data.length == 50 && list2.length < (max_okdesk_id - max_db_id) && list2.length < 2000)
+        } while (data.length == 50 && min_okdesk_id > max_db_id && list2.length < 2000)
 
         console.log("Кол-во новых записей всего: ", list2.length)
-        console.log("max_okdesk_id: ", max_okdesk_id)
-        const count = max_okdesk_id - max_db_id 
-        console.log("Кол-во новых записей как разница: ", count)
 
         // Запросить расширенные данные по новым записям
         for (let i = 0; i < list2.length; i++) {
@@ -231,7 +228,7 @@ export default defineEventHandler(async (event) => {
         })
 
         // Записать заказы в БД
-        if (count > 0) {
+        if (list2.length > 0) {
             const data4 = await new Promise((resolve, reject) => {
                 db.query(`INSERT INTO okdesk_orders  
                     (id, title, company_id, status, type, priority, spent_time_total, created_at, updated_at) 
@@ -251,13 +248,13 @@ export default defineEventHandler(async (event) => {
         // Выбрать ВСЕ заказы из БД
         const data5 = await new Promise((resolve, reject) => {
             db.query(`SELECT okdesk_orders.id, okdesk_orders.title, okdesk_orders.company_id, 
-                okdesk_orders.status, okdesk_orders.type, okdesk_orders.priority, okdesk_orders.spent_time_total, okdesk_orders.created_at, 
-                okdesk_orders.updated_at, okdesk_orders.deleted,
-                okdesk_companies.name AS company_name
-                FROM okdesk_orders
-                RIGHT JOIN okdesk_companies ON okdesk_orders.company_id = okdesk_companies.id
-                WHERE 1
-                ORDER BY created_at DESC`, 
+            okdesk_orders.status, okdesk_orders.type, okdesk_orders.priority, okdesk_orders.spent_time_total, 
+            okdesk_orders.created_at, okdesk_orders.updated_at, okdesk_orders.deleted, 
+            okdesk_companies.name AS company_name 
+            FROM okdesk_orders
+            LEFT JOIN okdesk_companies ON okdesk_orders.company_id = okdesk_companies.id 
+            WHERE okdesk_orders.title IS NOT NULL AND okdesk_companies.name IS NOT NULL
+            ORDER BY okdesk_orders.created_at DESC`, 
             [], (err, data) => {
                 if (err) {reject(err)} else {resolve(data)}
             })
@@ -324,7 +321,41 @@ export default defineEventHandler(async (event) => {
         } catch (e) {
             setResponse(204, 'Restore order error', e)
         }
-        return response    
+        return response
+        
+    case 'company.send':
+    // Check access token
+    if (!checkAccessToken(event)) {
+        setResponse(403, 'Invalid access token', null)
+        return response
+    }
+
+    // Company send
+    try {
+        const idSend = params.id
+        
+        const dataSend = await new Promise((resolve, reject) => {
+            db.query(`SELECT id, name
+                FROM okdesk_companies 
+                WHERE id=?`, 
+            [idSend], (err, data) => {
+                if (err) {reject(err)} else {resolve(data)}
+            })
+        })
+        if (!dataSend) {
+            setResponse(400, 'Company send error', null)
+            return response
+        }
+
+        // Подготовить данные
+        console.log("DATA: ", dataSend)
+
+        setResponse(200, 'Company send OK', null)
+
+    } catch (e) {
+        setResponse(204, 'Restore order error', e)
+    }
+    return response      
             
     default:
         setResponse(204, 'No Content', null)

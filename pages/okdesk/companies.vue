@@ -69,10 +69,26 @@
         <template v-slot:item.actions="{ item }">
             <!-- <v-icon class="item-action" size="small" @click="editRecord(item.id)">fa-regular fa-pen-to-square</v-icon> -->
             <!-- <v-icon class="item-action" size="small" @click="deleteRecord(item.id)">fa-solid fa-trash</v-icon> -->
+            <v-icon class="item-action" size="small" @click="sendRecord(item.id)">fa-regular fa-envelope</v-icon>
         </template>
     
         </v-data-table>
     
+        <client-only>
+            <v-row justify="center">
+                <v-dialog v-model="dialog.send" persistent width="auto">
+                  <v-card class="dialog-edit">
+                    <v-card-text class="text-h6">Отправить документ?</v-card-text>
+                    <v-card-actions>
+                      <v-spacer></v-spacer>
+                      <v-btn color="green-darken-1" variant="text" @click="dialog_send_yes">Да</v-btn>
+                      <v-btn color="green-darken-1" variant="text" @click="dialog_action_no">Нет</v-btn>
+                    </v-card-actions>
+                  </v-card>
+                </v-dialog>
+            </v-row>
+        </client-only>
+
         <client-only>
             <v-row justify="center">
                 <v-dialog v-model="dialog.edit" persistent width="auto">
@@ -121,6 +137,7 @@
     const page = ref(1)
     const search = ref('')
     const dialog = reactive({
+        send: false,
         edit: false,
         delete: false,
         action:false
@@ -154,6 +171,11 @@
         { title: 'Действия', key: 'actions', sortable: false }
     ]
        
+    const sendRecord = (id) => {
+        dialog.send = true
+        dialog.action = id
+    }
+
     const editRecord = (id) => {
         dialog.edit = true
         dialog.action = id
@@ -170,6 +192,32 @@
         router.push({ path: `/partners/clients/${dialog.action}` })
     }
     
+    const dialog_send_yes = async () => {
+        dialog.send = false
+    
+        const { data, error } = await userStore.myFetch('/api/okdesk', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${userStore.accessToken}`
+            },
+            body: JSON.stringify({ 
+                action: 'company.send',
+                id: dialog.action
+            }),
+        })
+        console.log("SEND RESULT: ", data._rawValue)
+
+        if (data && data._rawValue && data._rawValue.code && data._rawValue.code==200) {
+            useNuxtApp().$toast.success('Документ отправлен');
+
+        } else {
+            useNuxtApp().$toast.error('Ошибка отправки документа!');
+        }
+    
+        dialog.action = 0
+    }
+
     const dialog_delete_yes = async () => {
         dialog.delete = false
     
@@ -197,6 +245,7 @@
     }
     
     const dialog_action_no = () => {
+        dialog.send = false
         dialog.edit = false
         dialog.delete = false
         dialog.action = 0
@@ -226,7 +275,7 @@
                 })
             }
             indexStore.progress = false
-            console.log("OKDESK COMPANIES: ", items.value)
+            //console.log("OKDESK COMPANIES: ", items.value)
     
         } catch(e) {
             // console.log("ITEMS ERROR: ", e)

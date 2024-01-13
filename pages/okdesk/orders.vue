@@ -162,6 +162,7 @@
         { title: 'Наименование', key: 'title' },
         { title: 'Создано', key: 'created_at' },
         { title: 'Трудозатраты', key: 'spent_time_total' },
+        { title: 'Статус', key: 'status' },
         { title: 'Действия', key: 'actions', sortable: false }
     ]
     
