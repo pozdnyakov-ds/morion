@@ -1,9 +1,10 @@
 import db from "../../config/database"
 import checkAccessToken from "~/config/token"
 import send_email from "../../config/send_email"
-import generatePdf from "../../config/pdf"
+import pdf from 'html-pdf'
+import numberToWordsRu from "number-to-words-ru";
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event) => { 
     const config = useRuntimeConfig()
 
     const body = await readBody(event)
@@ -324,77 +325,291 @@ export default defineEventHandler(async (event) => {
         return response
         
     case 'company.send':
-    // Check access token
-    if (!checkAccessToken(event)) {
-        setResponse(403, 'Invalid access token', null)
-        return response
-    }
-
-    // Company send
-    // try {
-        const idSend = params.id ? params.id : null
-        const num = params.num ? params.num : '-'
-        const date = params.date ? params.date : '-'
-        const ul = params.ul ? params.ul : ''
-        const inn = params.inn ? params.inn : ''
-        const kpp = params.kpp ? params.kpp : ''
-        const address = params.address ? params.address : ''
-        const email = params.email ? params.email : null
-        const whatsapp = params.whatsapp ? params.whatsapp : null
-        const telegram = params.telegram ? params.telegram : null
-        const type = params.type ? Number(params.type) : 0
-        const items = params.items ? params.items : []
-
-        var subject = ''
-        switch(type) {
-            case 0:
-                subject = 'Проверка связи'
-                break
-            case 1:
-                subject = 'Ежеквартальная оплата услуг технической поддержки'
-                break
-            case 2:
-                subject = 'Замена фискального накопителя (ФН)'
-                break
-            case 3:
-                subject = 'Оплата услуг технической поддержки'
-                break
-            default:
-                subject = 'Проверка связи'
-        }
-        
-        const dataSend = await new Promise((resolve, reject) => {
-            db.query(`SELECT id, name
-                FROM okdesk_companies 
-                WHERE id=?`, 
-            [idSend], (err, data) => {
-                if (err) {reject(err)} else {resolve(data)}
-            })
-        })
-        if (!dataSend) {
-            setResponse(400, 'Company send error', null)
+        // Check access token
+        if (!checkAccessToken(event)) {
+            setResponse(403, 'Invalid access token', null)
             return response
         }
 
-        // Подготовить данные: "/temp/output.pdf"
-        const result = await generatePdf()
-        const file = "/temp/output.pdf"
+        // Company send
+        // try {
+            const idSend = params.id ? params.id : null
+            const num = params.num ? params.num : '-'
+            const date = params.date ? params.date : '-'
+            const ul = params.ul ? params.ul : ''
+            const inn = params.inn ? params.inn : ''
+            const kpp = params.kpp ? params.kpp : ''
+            const address = params.address ? params.address : ''
+            const email = params.email ? params.email : null
+            const whatsapp = params.whatsapp ? params.whatsapp : null
+            const telegram = params.telegram ? params.telegram : null
+            const type = params.type ? Number(params.type) : 0
+            const items = params.items ? params.items : []
 
-        // Отправить письмо
-        const send_data = await send_email(idSend, subject, file, num, date, ul, inn, kpp, 
-            address, email, whatsapp, telegram, type, items)
-        console.log("CODE: ", send_data)
+            var subject = ''
+            switch(type) {
+                case 0:
+                    subject = 'Проверка связи'
+                    break
+                case 1:
+                    subject = 'Ежеквартальная оплата услуг технической поддержки'
+                    break
+                case 2:
+                    subject = 'Замена фискального накопителя (ФН)'
+                    break
+                case 3:
+                    subject = 'Оплата услуг технической поддержки'
+                    break
+                default:
+                    subject = 'Проверка связи'
+            }
+            
+            // const dataSend = await new Promise((resolve, reject) => {
+            //     db.query(`SELECT id, name
+            //         FROM okdesk_companies 
+            //         WHERE id=?`, 
+            //     [idSend], (err, data) => {
+            //         if (err) {reject(err)} else {resolve(data)}
+            //     })
+            // })
+            // if (!dataSend) {
+            //     setResponse(400, 'Company send error', null)
+            //     return response
+            // }
 
-        if (send_data && send_data.code == 200) {
-            setResponse(200, 'Company send OK', null)
-        } else {
-            setResponse(400, 'Email send error', null)
-        }
+            // Подготовить данные: 
+            const htmlHeader = `<html>
+            <head>
+                <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+                <style type="text/css">
+                * {font-family: arial;font-size: 14px;line-height: 14px;}
+                table {margin: 0 0 15px 0;width: 100%;border-collapse: collapse;border-spacing: 0;}		
+                table th {padding: 5px;font-weight: bold;}        
+                table td {padding: 5px;}	
+                .header {margin: 0 0 0 0;padding: 0 0 15px 0;font-size: 12px;line-height: 12px;text-align: center;}
+                h1 {margin: 0 0 10px 0;padding: 10px 0;border-bottom: 2px solid #000;font-weight: bold;font-size: 20px;}
+                    
+                /* Реквизиты банка */
+                .details td {padding: 3px 2px;border: 1px solid #000000;font-size: 12px;line-height: 12px;vertical-align: top;}
+            
+                /* Поставщик/Покупатель */
+                .contract th {padding: 3px 0;vertical-align: top;text-align: left;font-size: 13px;line-height: 15px;}	
+                .contract td {padding: 3px 0;}		
+            
+                /* Наименование товара, работ, услуг */
+                .list thead, .list tbody  {border: 2px solid #000;}
+                .list thead th {padding: 4px 0;border: 1px solid #000;vertical-align: middle;text-align: center;}	
+                .list tbody td {padding: 0 2px;border: 1px solid #000;vertical-align: middle;font-size: 11px;line-height: 13px;}	
+                .list tfoot th {padding: 3px 2px;border: none;text-align: right;}	
+            
+                /* Сумма */
+                .total {margin: 0 0 20px 0;padding: 0 0 10px 0;border-bottom: 2px solid #000;}	
+                .total p {margin: 0;padding: 0;}
+                    
+                /* Руководитель, бухгалтер */
+                .sign {position: relative;}
+                .sign table {width: 60%;}
+                .sign th {padding: 40px 0 0 0;text-align: left;}
+                .sign td {padding: 40px 0 0 0;border-bottom: 1px solid #000;text-align: right;font-size: 12px;}
+                .sign-1 {position: absolute;left: 149px; top: 20px;}	
+                .sign-2 {position: absolute;left: 149px; top: 75px;}	
+                .printing {position: absolute;left: 271px; top: -20px;}
+                </style>
+            </head>
+            <body>
+                <p class="header">
+                    Внимание! Оплата данного счета означает согласие с условиями поставки товара.
+                    Уведомление об оплате обязательно, в противном случае не гарантируется наличие
+                    товара на складе. Товар отпускается по факту прихода денег на р/с Поставщика,
+                    самовывозом, при наличии доверенности и паспорта.
+                </p>
+            
+                <table class="details">
+                    <tbody>
+                        <tr>
+                            <td colspan="2" style="border-bottom: none;">${config.MORION_BANK_NAME}</td>
+                            <td>БИК</td>
+                            <td style="border-bottom: none;">${config.MORION_BANK_BIC}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="border-top: none; font-size: 10px;">Банк получателя</td>
+                            <td>Сч. №</td>
+                            <td style="border-top: none;">${config.MORION_ACCOUNT}</td>
+                        </tr>
+                        <tr>
+                            <td width="25%">ИНН ${config.MORION_INN}</td>
+                            <td width="30%">КПП ${config.MORION_KPP}</td>
+                            <td width="10%" rowspan="3">Сч. №</td>
+                            <td width="35%" rowspan="3">${config.MORION_BANK_ACCOUNT}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="border-bottom: none;">${config.MORION_UL}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="border-top: none; font-size: 10px;">Получатель</td>
+                        </tr>
+                    </tbody>
+                </table>
+            
+                <h1>Счет на оплату № ${num} от ${date} г.</h1>
+            
+                <table class="contract">
+                    <tbody>
+                        <tr>
+                            <td width="15%">Поставщик:</td>
+                            <th width="85%">${config.MORION_UL}, ИНН ${config.MORION_INN}, КПП ${config.MORION_KPP}, ${config.MORION_ADDRESS}</th>
+                        </tr>
+                        <tr>
+                            <td>Покупатель:</td>
+                            <th>ООО "Покупатель", ИНН 0000000000, КПП 000000000, 119019, Москва г, Новый Арбат, дом № 10
+                            </th>
+                        </tr>
+                    </tbody>
+                </table>
+            
+                <table class="list">
+                    <thead>
+                        <tr>
+                            <th width="5%">№</th>
+                            <th width="54%">Наименование товара, работ, услуг</th>
+                            <th width="8%">Коли-<br>чество</th>
+                            <th width="5%">Ед.<br>изм.</th>
+                            <th width="14%">Цена</th>
+                            <th width="14%">Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
 
-    // } catch (e) {
-    //     setResponse(204, 'Company send error', e)
-    // }
-    return response      
+            var htmlPositions = ''
+            var summary = 0.00
+            var count = 0
+
+            items.forEach((item, index) => {
+                const id = item.id ? item.id : '-'
+                const name = item.name ? item.name : '-'
+                const unit = item.unit ? item.unit : '-'
+                const price = item.price ? (item.price).toFixed(2) : 0.00
+                const quantity = item.quantity ? item.quantity : 0
+                const summ = (price * quantity).toFixed(2)
+                summary = +summary + +summ
+                count++
+                htmlPositions = htmlPositions + `<tr>
+                    <td align="center">${index + 1}</td>
+                    <td align="left">${name}</td>
+                    <td align="center">${quantity}</td>
+                    <td align="center">${unit}</td>
+                    <td align="right">${price}</td>
+                    <td align="right">${summ}</td>
+                </tr>`
+            })
+
+            const summary_string = numberToWordsRu.convert(summary, {
+                currency: "rub",
+                convertNumbertToWords: {
+                  integer: true,
+                  fractional: false
+                }
+            });
+
+            const htmlFooter = `</tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="5">Итого:</th>
+                            <th>${summary.toFixed(2)}</th>
+                        </tr>
+                        <tr>
+                            <th colspan="5">Без НДС:</th>
+                            <th>&nbsp;</th>
+                        </tr>
+                        <tr>
+                            <th colspan="5">Всего к оплате:</th>
+                            <th>${summary.toFixed(2)}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+                
+                <div class="total">
+                    <p>Всего наименований ${count}, на сумму ${summary.toFixed(2)} руб.</p>
+                    <p><strong>${summary_string}</strong></p>
+                </div>
+                
+                <div class="sign">
+                    <img class="sign-1" style="width: 100px;" src="https://cafecard.ru/dist/img/morion/bill/facsimile_1.png">
+                    <img class="sign-2" style="width: 100px;" src="https://cafecard.ru/dist/img/morion/bill/facsimile_2.png">
+                    <img class="printing" style="width: 180px;" src="https://cafecard.ru/dist/img/morion/bill/sign.png">
+                    <table>
+                        <tbody>
+                            <tr>
+                                <th width="30%">Руководитель</th>
+                                <td width="70%">Иванов А.А.</td>
+                            </tr>
+                            <tr>
+                                <th>Бухгалтер</th>
+                                <td>Сидоров Б.Б.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </body>
+            </html>`;
+            const html = htmlHeader + htmlPositions + htmlFooter;
+            const options = {
+                "border": {
+                    "top": "0.5in",
+                    "right": "0.5in",
+                    "bottom": "0.5in",
+                    "left": "0.75in"
+                }
+            }
+
+            async function generatePDF(html, options, file) {
+                try {
+                    const result = await new Promise((resolve, reject) => {
+                        pdf.create(html, options).toFile(file, (err, res) => {
+                            if (err) reject(err);
+                            else resolve(res);
+                        });
+                    });
+                    console.log('PDF generated successfully:', result);
+
+                    setResponse(200, 'PDF send OK', null);
+                    return response;
+
+                } catch (e) {
+                    console.log('Create PDF error: ', e);
+                    setResponse(400, 'Create PDF error', null);
+                    return response;
+                }
+            }
+
+            const file = config.PDF_FILENAME
+
+            try {
+                // Создать PDF
+                await generatePDF(html, options, file);
+
+                // Отправить письмо
+                const send_data = await send_email(idSend, subject, file, num, date, ul, inn, kpp, 
+                    address, email, whatsapp, telegram, type, items)
+                
+                console.log("SEND RESULT CODE: ", send_data)
+
+                if (send_data && send_data.code == 200) {
+                    setResponse(200, 'Email send OK', null)
+
+                } else {
+                    setResponse(400, 'Email send error', null)
+                }
+
+            } catch (e) {
+                console.log("Create PDF error: ", e);
+                setResponse(400, 'Create PDF error', null)
+            }
+
+        // } catch (e) {
+        //     setResponse(204, 'Common send error', e)
+        // }
+        return response     
             
     default:
         setResponse(204, 'No Content', null)

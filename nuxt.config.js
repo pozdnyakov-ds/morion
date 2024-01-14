@@ -54,6 +54,26 @@ export default defineNuxtConfig({
     CLIENT_SECRET: process.env.CLIENT_SECRET,
     OKDESK_TOKEN: process.env.OKDESK_TOKEN,
 
+    PDF_FILENAME: process.env.PDF_FILENAME,
+    MORION_UL: process.env.MORION_UL,
+    MORION_INN: process.env.MORION_INN,
+    MORION_KPP: process.env.MORION_KPP,
+    MORION_ACCOUNT: process.env.MORION_ACCOUNT,
+    MORION_ADDRESS: process.env.MORION_ADDRESS,
+    MORION_STAMP: process.env.MORION_STAMP,
+
+    MORION_BANK_NAME: process.env.MORION_BANK_NAME,
+    MORION_BANK_BIC: process.env.MORION_BANK_BIC,
+    MORION_BANK_ACCOUNT: process.env.MORION_BANK_ACCOUNT,
+
+    MORION_SIGN_1_POSITION: process.env.MORION_SIGN_1_POSITION,
+    MORION_SIGN_1_FIO: process.env.MORION_SIGN_1_FIO,
+    MORION_SIGN_1_FACSIMILE: process.env.MORION_SIGN_1_FACSIMILE,
+
+    MORION_SIGN_2_POSITION: process.env.MORION_SIGN_2_POSITION,
+    MORION_SIGN_2_FIO: process.env.MORION_SIGN_2_FIO,
+    MORION_SIGN_2_FACSIMILE: process.env.MORION_SIGN_2_FACSIMILE,
+
     public: {
       BASE_URL: process.env.NODE_ENV === "development"
       ? "https://localhost:3000"

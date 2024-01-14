@@ -196,6 +196,7 @@
         dialog.send = false
         const id = dialog.action.id
         const urcom = dialog.action.urcom
+        indexStore.progress = true
     
         const { data, error } = await userStore.myFetch('/api/okdesk', {
             method: 'POST',
@@ -216,16 +217,31 @@
                 type: 1,
                 items: [{
                     name: "Товар 1",
-                    price: 1.50,
-                    quantity: 1.00
+                    price: 1000.50,
+                    quantity: 1.00,
+                    unit: "Шт."
+                },
+                {
+                    name: "Услуга 1",
+                    price: 2.50,
+                    quantity: 2.00,
+                    unit: "Час"
                 },
                 {
                     name: "Товар 2",
+                    price: 15000.50,
+                    quantity: 1.00,
+                    unit: "Шт."
+                },
+                {
+                    name: "Услуга 2",
                     price: 2.50,
-                    quantity: 2.00
+                    quantity: 2.00,
+                    unit: "Час"
                 }]
             }),
         })
+        indexStore.progress = false
 
         if (data && data._rawValue && data._rawValue.code && data._rawValue.code==200) {
             useNuxtApp().$toast.success('Документ отправлен');

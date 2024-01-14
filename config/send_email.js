@@ -78,7 +78,7 @@ const send_email = async (id, subject, file, num, date, ul, inn, kpp,
         attachments: [
             {
                 filename: 'Счет.pdf',
-                path: "/temp/bill.pdf"
+                path: file
             }
         ],
         dkim: {
